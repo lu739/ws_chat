@@ -10,4 +10,14 @@ class Chat extends Model
     use HasFactory;
 
     protected $guarded = [];
+
+    public function users()
+    {
+        return $this->belongsToMany(User::class);
+    }
+
+    public function messages()
+    {
+        return $this->hasMany(Message::class);
+    }
 }
