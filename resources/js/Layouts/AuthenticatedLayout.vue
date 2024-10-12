@@ -39,6 +39,12 @@ const showingNavigationDropdown = ref(false);
                                 >
                                     Dashboard
                                 </NavLink>
+                                <NavLink
+                                    :href="route('chats.index')"
+                                    :active="route().current('chats.index')"
+                                >
+                                    Chats
+                                </NavLink>
                             </div>
                         </div>
 
