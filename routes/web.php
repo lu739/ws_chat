@@ -27,6 +27,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/chats', [\App\Http\Controllers\ChatController::class, 'store'])
         ->name('chats.store');
 
+    Route::post('/messages', [\App\Http\Controllers\MessageController::class, 'store'])
+        ->name('messages.store');
+
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');

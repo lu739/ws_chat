@@ -15,4 +15,16 @@ class Message extends Model
     {
         return $this->belongsTo(Chat::class);
     }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function statuses()
+    {
+        return $this
+            ->belongsToMany(User::class, 'message_status', 'message_id', 'user_id')
+            ->withPivot('chat_id');
+    }
 }
