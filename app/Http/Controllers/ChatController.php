@@ -20,6 +20,7 @@ class ChatController extends Controller
 
         $chats = auth()->user()->chats()
             ->whereHas('messages')
+            ->with('users')
             ->get();
 
         return inertia('Chat/Index', compact('users', 'chats'));
@@ -28,6 +29,10 @@ class ChatController extends Controller
 
     public function show(Chat $chat)
     {
+        if (!auth()->user()->chats()->where('chats.id', $chat->id)->exists()) {
+            return redirect()->route('chats.index');
+        }
+
         $chat = ChatResource::make($chat->load('users', 'messages'))->resolve();
 
         return inertia('Chat/Show', [

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -26,5 +27,12 @@ class Message extends Model
         return $this
             ->belongsToMany(User::class, 'message_status', 'message_id', 'user_id')
             ->withPivot('chat_id');
+    }
+
+    public function isOwner(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => $this->user_id === auth()->id(),
+        );
     }
 }

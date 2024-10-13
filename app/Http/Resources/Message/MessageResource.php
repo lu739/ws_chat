@@ -20,6 +20,7 @@ class MessageResource extends JsonResource
             'body' => $this->body,
             'created_at' => $this->created_at,
             'user' => UserResource::make($this->user)->resolve(),
+            'is_owner' => $this->is_owner,
         ];
     }
 }

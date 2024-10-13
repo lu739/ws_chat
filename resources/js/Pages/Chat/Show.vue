@@ -28,7 +28,6 @@
                     'chat_id': this.chat.id,
                 })).then(res => {
                     this.body = '';
-                    console.log(res);
                     this.chat.messages.push(res.data);
                 });
             }
@@ -49,7 +48,10 @@
                     <div class="w-3/4 p-2 border border-gray-200">
                         <div class="p-2 bg-white rounded-lg mb-4 flex flex-col items-start">
                             <span v-for="message in chat.messages" :key="message.id"
-                                 class="bg-sky-300 px-3 py-2 rounded-lg mb-2">
+                                 :class="[
+                                     'px-3 py-2 rounded-lg mb-2',
+                                     message.is_owner ? 'bg-sky-300 self-end' : 'bg-gray-100 self-start border border-sky-200'
+                                 ]">
                                <span class="flex text-sm font-bold mb-1">
                                     {{ message.user.name }}
                                </span>
