@@ -3,10 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\Chat\StoreRequest;
+use App\Http\Resources\Chat\ChatResource;
 use App\Http\Resources\User\UserResource;
 use App\Models\Chat;
 use App\Models\User;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class ChatController extends Controller
@@ -18,7 +18,10 @@ class ChatController extends Controller
             ->get()
         )->resolve();
 
-        $chats = auth()->user()->chats()->get();
+        $chats = auth()->user()->chats()
+            ->whereHas('messages')
+            ->with('users')
+            ->get();
 
         return inertia('Chat/Index', compact('users', 'chats'));
     }
@@ -26,8 +29,14 @@ class ChatController extends Controller
 
     public function show(Chat $chat)
     {
+        if (!auth()->user()->chats()->where('chats.id', $chat->id)->exists()) {
+            return redirect()->route('chats.index');
+        }
+
+        $chat = ChatResource::make($chat->load('users', 'messages'))->resolve();
+
         return inertia('Chat/Show', [
-            'chat' => $chat->load('users'),
+            'chat' => $chat,
         ]);
     }
 
@@ -37,12 +46,13 @@ class ChatController extends Controller
         $data = $request->validated();
         $userIds = array_merge($data['users'], [auth()->id()]);
         sort($userIds);
-        $data['users'] = implode('-', $userIds);
+        $data['users_str'] = implode('-', $userIds);
+        unset($data['users']);
 
         try {
             DB::beginTransaction();
 
-                $chat = Chat::where(['users' => $data['users']])->first();
+                $chat = Chat::where(['users_str' => $data['users_str']])->first();
 
                 if (!$chat) {
                     $chat = Chat::create($data);
