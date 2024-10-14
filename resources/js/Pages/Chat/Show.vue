@@ -1,6 +1,7 @@
 <script>
 
     import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
+    import axios from "axios";
 
     export default {
         name: 'Chats',
@@ -23,6 +24,7 @@
 
         methods: {
             store() {
+                axios.defaults.headers.common['X-Socket-ID'] = Echo.socketId();
                 axios.post(route('messages.store', {
                     'body': this.body,
                     'chat_id': this.chat.id,
@@ -31,6 +33,13 @@
                     this.chat.messages.push(res.data);
                 });
             }
+        },
+
+        created() {
+            Echo.channel(`store-message${this.chat.id}`)
+                .listen('.storeMessage', (e) => {
+                    this.chat.messages.push(e.message);
+                });
         }
     }
 </script>
@@ -46,7 +55,7 @@
             <div class="mx-auto max-w-7xl sm:px-6 lg:px-8 w-3/4">
                 <div class="flex">
                     <div class="w-3/4 p-2 border border-gray-200">
-                        <div class="p-2 bg-white rounded-lg mb-4 flex flex-col items-start">
+                        <div class=" max-h-96 overflow-auto p-2 bg-white rounded-lg mb-4 flex flex-col items-start">
                             <span v-for="message in chat.messages" :key="message.id"
                                  :class="[
                                      'px-3 py-2 rounded-lg mb-2',

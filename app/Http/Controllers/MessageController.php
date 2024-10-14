@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\StoreMessageEvent;
 use App\Http\Requests\Message\StoreRequest;
 use App\Http\Resources\Message\MessageResource;
 use App\Models\Chat;
@@ -29,6 +30,8 @@ class MessageController extends Controller
                 $message->statuses()->attach($user, ['chat_id' => $chat->id]);
             }
 
+            broadcast(new StoreMessageEvent($message))->toOthers();
+
             DB::commit();
         } catch (\Exception $e) {
             DB::rollBack();
@@ -37,7 +40,7 @@ class MessageController extends Controller
                 ->json(['message' => $e->getMessage()], 500);
         }
 
-        // broadcast(new \App\Events\MessageCreated($message))->toOthers();
+        // event(new StoreMessageEvent($message));
 
         return MessageResource::make($message)->resolve();
     }
