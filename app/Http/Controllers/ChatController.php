@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Events\StoreMessageStatusEvent;
 use App\Http\Requests\Chat\StoreRequest;
+use App\Http\Resources\Chat\ChatMinifiedResource;
 use App\Http\Resources\Chat\ChatResource;
+use App\Http\Resources\Message\MessageResource;
 use App\Http\Resources\User\UserResource;
 use App\Models\Chat;
 use App\Models\User;
@@ -49,10 +51,30 @@ class ChatController extends Controller
             }
         }
 
-        $chat = ChatResource::make($chat->load('users', 'messages'))->resolve();
+        $page = request('page') ?? 1;
+        $isLoadMore = request('load_more') ?? false;
+
+        $messages = $chat
+            ->messages()
+            ->with('user')
+            ->orderByDesc('created_at')
+            ->paginate(5, ['*'], 'page', $page);
+
+        if ($isLoadMore) {
+            return response()->json([
+                'messages' => MessageResource::collection($messages->items())->resolve(),
+                'last_page' => $messages->lastPage(),
+                'current_page' => $messages->currentPage(),
+            ]);
+        }
+
+        $chat = ChatMinifiedResource::make($chat->load('users'))->resolve();
+        $messages = MessageResource::collection($messages)->resolve();
 
         return inertia('Chat/Show', [
+            'current_page' => $page,
             'chat' => $chat,
+            'messages' => $messages,
         ]);
     }
 

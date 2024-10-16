@@ -10,6 +10,8 @@
 
         props: {
             chat: Object,
+            messages: Object,
+            current_page: Number,
         },
 
         data() {
@@ -20,6 +22,12 @@
                     .join(', '),
 
                 body: '',
+
+                reverseMessages: this.messages.reverse(),
+
+                currentPage: this.current_page ?? 1,
+
+                isLastPage: this.messages.length < 5,
             }
         },
 
@@ -30,14 +38,30 @@
                     'chat_id': this.chat.id,
                 })).then(res => {
                     this.body = '';
-                    this.chat.messages.push(res.data);
+                    this.reverseMessages.push(res.data);
+                });
+            },
+            loadMore() {
+                axios.get(route('chats.show', {
+                    'chat': this.chat.id,
+                    'page': +this.currentPage + 1,
+                    'load_more': true,
+                })).then(res => {
+                    let {messages, current_page, last_page} = res.data;
+                    let reversed = messages.reverse();
+                    this.reverseMessages = reversed.concat(this.reverseMessages);
+                    this.currentPage = current_page;
+
+                    if (current_page === last_page) {
+                        this.isLastPage = true;
+                    }
                 });
             },
             readByUser() {
                 axios.patch(route('messages.chat.readByUser', {
                     'chat': this.chat,
                 })).then(res => {
-                    // this.chat.messageStatus().update({is_read: 1});
+                    // обновить вид прочитанных этим юзером сообщений в этом чате
                 });
             }
         },
@@ -46,7 +70,7 @@
             // Echo.channel(`store-message${this.chat.id}`)
             Echo.private(`chat.${this.chat.id}`)
                 .listen('.storeMessage', (e) => {
-                    this.chat.messages.push(e.message);
+                    this.reverseMessages.push(e.message);
                     this.readByUser();
                 });
         },
@@ -68,14 +92,20 @@
             <div class="mx-auto max-w-7xl sm:px-6 lg:px-8 w-3/4">
                 <div class="flex">
                     <div class="w-3/4 p-2 border border-gray-200">
+                        <button v-if="!isLastPage"
+                            class="ms-auto w-1/3 mt-3 py-3 text-white text-2xl font-bold border border-gray-100 bg-gray-800 rounded-lg"
+                            @click="loadMore()"
+                        >
+                            Load more...
+                        </button>
                         <div class=" max-h-96 overflow-auto p-2 bg-white rounded-lg mb-4 flex flex-col items-start">
-                            <span v-for="message in chat.messages" :key="message.id"
+                            <span v-for="message in reverseMessages" :key="message.id"
                                  :class="[
                                      'px-3 py-2 rounded-lg mb-2',
                                      message.is_owner ? 'bg-sky-300 self-end' : 'bg-gray-100 self-start border border-sky-200'
                                  ]">
                                <span class="flex text-sm font-bold mb-1">
-                                    {{ message.user.name }}
+                                    {{ message.user?.name }}
                                </span>
                                 <span>{{ message.body }}</span>
                             </span>

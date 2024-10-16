@@ -27,8 +27,7 @@
                             chat.unreadMessages = e.unreadMessages;
                             chat.lastMessage = e.lastMessage;
                         }
-                    })
-                    console.log(e);
+                    });
                 });
         },
 

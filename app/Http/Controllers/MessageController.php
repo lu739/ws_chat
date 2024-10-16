@@ -28,10 +28,7 @@ class MessageController extends Controller
 
             $message = Message::create($data);
 
-            StoreMessageStatusJob::dispatch($otherUsers, $chat, $message)
-                ->onQueue('store_status_message');
-
-            broadcast(new StoreMessageEvent($message))->toOthers();
+            StoreMessageStatusJob::dispatch($otherUsers, $chat, $message);
 
             DB::commit();
         } catch (\Exception $e) {
@@ -41,6 +38,7 @@ class MessageController extends Controller
                 ->json(['message' => $e->getMessage()], 500);
         }
 
+        broadcast(new StoreMessageEvent($message))->toOthers();
         // event(new StoreMessageEvent($message));
 
         return MessageResource::make($message)->resolve();

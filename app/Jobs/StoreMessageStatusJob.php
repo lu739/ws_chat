@@ -13,9 +13,7 @@ class StoreMessageStatusJob implements ShouldQueue
 {
     use Queueable;
 
-    /**
-     * Create a new job instance.
-     */
+
     public function __construct(
         private Collection $otherUsers,
         private Chat $chat,
@@ -23,9 +21,6 @@ class StoreMessageStatusJob implements ShouldQueue
     {
     }
 
-    /**
-     * Execute the job.
-     */
     public function handle(): void
     {
         foreach ($this->otherUsers as $user) {
