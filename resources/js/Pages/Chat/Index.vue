@@ -19,6 +19,19 @@
             }
         },
 
+        created() {
+            Echo.private(`chat.changes.for.user.${this.$page.props.auth.user.id}`)
+                .listen('.storeMessageStatus', (e) => {
+                    this.chats.map(chat => {
+                        if (chat.id === e.chat_id) {
+                            chat.unreadMessages = e.unreadMessages;
+                            chat.lastMessage = e.lastMessage;
+                        }
+                    })
+                    console.log(e);
+                });
+        },
+
         methods: {
             store(ids, title = '') {
                 this.$inertia.post(route('chats.store', {
@@ -58,9 +71,17 @@
                                                     .map(user => user.name)
                                                     .join(', ')
                                                 }}
+                                <span v-if="chat.unreadMessages" class="font-bold text-sm ml-2 px-3 py-2 text-sky-700 rounded-full bg-gray-200">
+                                    {{ chat.unreadMessages }}
+                                </span>
+                                <span v-if="chat.lastMessage"
+                                      :class="['text-sm ml-2 px-3 py-2 text-sky-800 rounded-full bg-gray-100 italic',
+                                                chat.unreadMessages && 'font-bold'
+                                                ]">
+                                    {{ chat.lastMessage }}
+                                </span>
                             </li>
                         </ul>
-
                     </div>
                     <div class="w-1/2 p-2 border border-gray-200">
                         <h3 class="mb-3 mt-2 text-2xl font-bold flex">

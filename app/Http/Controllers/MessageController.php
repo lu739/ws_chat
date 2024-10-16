@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Events\StoreMessageEvent;
+use App\Events\StoreMessageStatusEvent;
 use App\Http\Requests\Message\StoreRequest;
 use App\Http\Resources\Message\MessageResource;
 use App\Models\Chat;
@@ -28,6 +29,13 @@ class MessageController extends Controller
 
             foreach ($otherUsers as $user) {
                 $message->statuses()->attach($user, ['chat_id' => $chat->id]);
+
+                broadcast(new StoreMessageStatusEvent(
+                    $user->id,
+                    $chat,
+                    $chat->unreadMessages($user->id)->count(),
+                    $chat->lastMessage(),
+                ));
             }
 
             broadcast(new StoreMessageEvent($message))->toOthers();
@@ -43,5 +51,26 @@ class MessageController extends Controller
         // event(new StoreMessageEvent($message));
 
         return MessageResource::make($message)->resolve();
+    }
+
+    public function readByUser(Chat $chat)
+    {
+        $hasUnread = $chat->unreadMessages()->count() > 0;
+
+        if ($hasUnread) {
+            $chat->unreadMessages()->update(['is_read' => 1]);
+
+            $users = $chat->otherUsers()->get();
+            foreach ($users as $user) {
+                broadcast(new StoreMessageStatusEvent(
+                    $user->id,
+                    $chat,
+                    $chat->unreadMessages($user->id)->count(),
+                    $chat->lastMessage(),
+                ));
+            }
+        }
+
+        return response()->json(['success' => true]);
     }
 }
