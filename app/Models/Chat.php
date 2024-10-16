@@ -24,4 +24,23 @@ class Chat extends Model
     {
         return $this->hasMany(Message::class);
     }
+
+    public function messageStatus()
+    {
+        return $this->hasMany(MessageStatus::class);
+    }
+
+    public function unreadMessages(int $userId = null)
+    {
+        $userId = $userId ?: auth()->id();
+
+        return $this->messageStatus()
+            ->where('user_id', '=', $userId)
+            ->where('is_read', 0);
+    }
+
+    public function lastMessage(): ?string
+    {
+        return $this->messages()->latest()->first()->body ?? null;
+    }
 }

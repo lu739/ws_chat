@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\StoreMessageStatusEvent;
 use App\Http\Requests\Chat\StoreRequest;
 use App\Http\Resources\Chat\ChatResource;
 use App\Http\Resources\User\UserResource;
@@ -18,10 +19,10 @@ class ChatController extends Controller
             ->get()
         )->resolve();
 
-        $chats = auth()->user()->chats()
+        $chats = ChatResource::collection(auth()->user()->chats()
             ->whereHas('messages')
-            ->with('users')
-            ->get();
+            ->with('users', 'unreadMessages')
+            ->get())->resolve();
 
         return inertia('Chat/Index', compact('users', 'chats'));
     }
@@ -31,6 +32,21 @@ class ChatController extends Controller
     {
         if (!auth()->user()->chats()->where('chats.id', $chat->id)->exists()) {
             return redirect()->route('chats.index');
+        }
+
+        $hasUnread = $chat->unreadMessages()->count() > 0;
+        if ($hasUnread) {
+            $chat->unreadMessages()->update(['is_read' => 1]);
+
+            $otherUsers = $chat->otherUsers;
+            foreach ($otherUsers as $user) {
+                broadcast(new StoreMessageStatusEvent(
+                    $user->id,
+                    $chat,
+                    $chat->unreadMessages()->count(),
+                    $chat->lastMessage(),
+                ));
+            }
         }
 
         $chat = ChatResource::make($chat->load('users', 'messages'))->resolve();

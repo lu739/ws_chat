@@ -2,6 +2,7 @@
 
     import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
     import axios from "axios";
+    axios.defaults.headers.common['X-Socket-ID'] = Echo.socketId();
 
     export default {
         name: 'Chats',
@@ -24,7 +25,6 @@
 
         methods: {
             store() {
-                axios.defaults.headers.common['X-Socket-ID'] = Echo.socketId();
                 axios.post(route('messages.store', {
                     'body': this.body,
                     'chat_id': this.chat.id,
@@ -32,14 +32,27 @@
                     this.body = '';
                     this.chat.messages.push(res.data);
                 });
+            },
+            readByUser() {
+                axios.patch(route('messages.chat.readByUser', {
+                    'chat': this.chat,
+                })).then(res => {
+                    // this.chat.messageStatus().update({is_read: 1});
+                });
             }
         },
 
         created() {
-            Echo.channel(`store-message${this.chat.id}`)
+            // Echo.channel(`store-message${this.chat.id}`)
+            Echo.private(`chat.${this.chat.id}`)
                 .listen('.storeMessage', (e) => {
                     this.chat.messages.push(e.message);
+                    this.readByUser();
                 });
+        },
+
+        unmounted() {
+            Echo.leave(`chat.${this.chat.id}`);
         }
     }
 </script>

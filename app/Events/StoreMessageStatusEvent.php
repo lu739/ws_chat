@@ -2,8 +2,8 @@
 
 namespace App\Events;
 
-use App\Http\Resources\Message\MessageResource;
-use App\Models\Message;
+
+use App\Models\Chat;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
@@ -11,37 +11,38 @@ use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
 
-class StoreMessageEvent implements ShouldBroadcast
+class StoreMessageStatusEvent implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     /**
      * Create a new event instance.
      */
-    public function __construct(private Message $message)
+    public function __construct(
+        private int $userId,
+        private Chat $chat,
+        private int $unreadMesagesCount,
+        private string $lastMesage)
     {
     }
 
 
     public function broadcastOn(): PrivateChannel
-    // public function broadcastOn(): array
     {
-        return new PrivateChannel('chat.' . $this->message->chat_id);
-
-        // return [
-        //     new Channel('store-message' . $this->message->chat_id),
-        // ];
+        return new PrivateChannel('chat.changes.for.user.' . $this->userId);
     }
 
     public function broadcastAs(): string
     {
-        return 'storeMessage';
+        return 'storeMessageStatus';
     }
 
     public function broadcastWith(): array
     {
         return [
-            'message' => MessageResource::make($this->message)->resolve(),
+            'chat_id' => $this->chat->id,
+            'unreadMessages' => $this->unreadMesagesCount,
+            'lastMessage' => $this->lastMesage,
         ];
     }
 }
