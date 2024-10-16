@@ -6,6 +6,7 @@ use App\Events\StoreMessageEvent;
 use App\Events\StoreMessageStatusEvent;
 use App\Http\Requests\Message\StoreRequest;
 use App\Http\Resources\Message\MessageResource;
+use App\Jobs\StoreMessageStatusJob;
 use App\Models\Chat;
 use App\Models\Message;
 use Illuminate\Support\Facades\DB;
@@ -27,16 +28,8 @@ class MessageController extends Controller
 
             $message = Message::create($data);
 
-            foreach ($otherUsers as $user) {
-                $message->statuses()->attach($user, ['chat_id' => $chat->id]);
-
-                broadcast(new StoreMessageStatusEvent(
-                    $user->id,
-                    $chat,
-                    $chat->unreadMessages($user->id)->count(),
-                    $chat->lastMessage(),
-                ));
-            }
+            StoreMessageStatusJob::dispatch($otherUsers, $chat, $message)
+                ->onQueue('store_status_message');
 
             broadcast(new StoreMessageEvent($message))->toOthers();
 
