@@ -19,7 +19,6 @@ class ChatResource extends JsonResource
         return [
             'id' => $this->id,
             'title' => $this->title,
-            'messages' => MessageResource::collection($this->messages)->resolve(),
             'users' => UserResource::collection($this->users)->resolve(),
             'unreadMessages' => $this->unreadMessages()->count(),
             'lastMessage' => $this->lastMessage(),
